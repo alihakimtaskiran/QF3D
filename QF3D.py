@@ -62,9 +62,7 @@ class Boson(object):
 class Entity(object):
     def __init__(self):
         self.__model=o3d.geometry.PointCloud()
-        self.__path=np.array(((0,0,0),))
         self.__path=np.array([(i/250, 0, 0) for i in range(0,1000)]+[(0,i/250, 0) for i in range(0,1000)]+[(0, 0, i/250) for i in range(0,1000)])
-        self.__colors=np.array(((0,0,0),))
         self.__colors=np.array(((0,0,0),)*3000)
     def add(self, particle):
         if type(particle) in {Boson,Fermion}:
