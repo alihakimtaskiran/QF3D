@@ -85,7 +85,7 @@ class Entity(object):
                             path[i][j]=part.io[0][j]+ds[j]*i
                     self.__path=np.concatenate((self.__path, path),0)
                 else:
-                    raise ValueError("No such Boson exists")
+                    raise ValueError("No such particle exists")
     def render(self):
         self.__model.points=o3d.utility.Vector3dVector(self.__path)
         self.__model.colors=o3d.utility.Vector3dVector(self.__colors)
