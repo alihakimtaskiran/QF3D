@@ -1,5 +1,6 @@
 import open3d as o3d
 import numpy as np
+print("Get ready! Tachyon Era coming soon ")
 last_scientific_update="27th March 2022"
 cmapf={"quark":(.533, .698, 0), "lepton":(0, .58, .941)}
 cmapb={"photon":(.565, .004, 1.00), "gluon":(.937, 1., .004), "w":(1., .396, 0), "z":(1., .408, .576), "higgs":(.706, .749, .98)}
@@ -65,7 +66,7 @@ class Entity(object):
         self.__path=np.array([(i/250, 0, 0) for i in range(0,1000)]+[(0,i/250, 0) for i in range(0,1000)]+[(0, 0, i/250) for i in range(0,1000)])
         self.__colors=np.array(((0,0,0),)*3000)
     def add(self, particle):
-        if type(particle) in {Boson,Fermion}:
+        if type(particle)==Fermion:
             self.__colors=np.concatenate((self.__colors,np.array((cmap[particle.name],)*1000)),0)
             ds=tuple([particle.delta[i]/1000 for i in range(3)])
             path=np.zeros((1000,3))
@@ -73,29 +74,55 @@ class Entity(object):
                 for j in range(3):
                     path[i][j]=part.io[0][j]+ds[j]*i
             self.__path=np.concatenate((self.__path, path),0)
+        elif type(particle)==Boson:
+            self.__colors=np.concatenate((self.__colors,np.array((cmap[particle.name],)*1000)),0)
+            ds=tuple([particle.delta[i]/1000 for i in range(3)])
+            path=np.zeros((1000,3))
+            sf=(particle.delta[0]**2+particle.delta[1]**2+particle.delta[2]**2)**.5/20
+            for i in range(1000):
+                path[i][0]=particle.io[0][0]+ds[0]*i+np.cos(i*0.03)*sf
+                path[i][1]=particle.io[0][1]+ds[1]*i+np.sin(i*0.03)*sf
+                path[i][2]=particle.io[0][2]+ds[2]*i
+            self.__path=np.concatenate((self.__path, path),0)
             
         elif type(particle) in {list, tuple, set}:
             for part in particle:
-                if type(part) in {Boson,Fermion}:
+                if type(part)==Fermion:
                     self.__colors=np.concatenate((self.__colors,np.array((cmap[part.name],)*1000)),0)
                     ds=tuple([part.delta[i]/1000 for i in range(3)])
+                    
                     path=np.zeros((1000,3))
                     for i in range(1000):
                         for j in range(3):
                             path[i][j]=part.io[0][j]+ds[j]*i
                     self.__path=np.concatenate((self.__path, path),0)
+                elif type(part)==Boson:
+                    self.__colors=np.concatenate((self.__colors,np.array((cmap[part.name],)*1000)),0)
+                    ds=tuple([part.delta[i]/1000 for i in range(3)])
+                    path=np.zeros((1000,3))
+                    sf=(part.delta[0]**2+part.delta[1]**2+part.delta[2]**2)**.5/20
+                    for i in range(1000):
+                        path[i][0]=part.io[0][0]+ds[0]*i+np.cos(i*0.03)*sf
+                        path[i][1]=part.io[0][1]+ds[1]*i+np.sin(i*0.03)*sf
+                        path[i][2]=part.io[0][2]+ds[2]*i
+                    self.__path=np.concatenate((self.__path, path),0)
                 else:
-                    raise ValueError("No such particle exists")
+                    raise ValueError("No such Boson exists")
     def render(self):
         self.__model.points=o3d.utility.Vector3dVector(self.__path)
         self.__model.colors=o3d.utility.Vector3dVector(self.__colors)
     
-    def view(self):
-        self.render()
+    def view(self,render=True):
+        if render:
+            self.render()
         o3d.visualization.draw_geometries([self.__model])
     
-    def savefile(self,path_to_file):
+    def savefile(self,path_to_file, render=True):
+        if render:
+            self.render()
         o3d.io.write_point_cloud(path_to_file, self.__model)
         
-    def entity(self):
+    def entity(self, render=True):
+        if render:
+            self.render()
         return self.__mode
