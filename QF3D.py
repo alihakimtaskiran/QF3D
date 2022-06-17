@@ -116,8 +116,8 @@ class Entity(object):
                     path=np.zeros((1000,3))
                     
                     
-                    spiral_scalar=(particle.delta[0]**2+particle.delta[1]**2+particle.delta[2]**2)**.5/20
-                    longitudinal_scalar=np.linalg.norm(particle.delta)/1000
+                    spiral_scalar=(part.delta[0]**2+part.delta[1]**2+part.delta[2]**2)**.5/20
+                    longitudinal_scalar=np.linalg.norm(part.delta)/1000
                     
                     for i in range(1000):
                         path[i]=part.io[0]+np.dot(part.translator, np.array((np.cos(i*0.03)*spiral_scalar,np.sin(i*0.03)*spiral_scalar,i*longitudinal_scalar)))
