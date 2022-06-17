@@ -32,8 +32,8 @@ class Fermion(object):
         if not len(end)==3:
             raise ValueError("The entity is defined to be had 1 temporal and 2 spatial dimension")
         
-        self.delta=(end[0]-start[0], end[1]-start[1], end[2]-start[2])
-        self.io=(start,end)
+        self.delta=np.array((end[0]-start[0], end[1]-start[1], end[2]-start[2]))
+        self.io=np.array((start,end))
     
     
     
@@ -57,8 +57,15 @@ class Boson(object):
         if not len(end)==3:
             raise ValueError("The entity is defined to be had 1 temporal and 2 spatial dimension")
         
-        self.delta=(end[0]-start[0], end[1]-start[1], end[2]-start[2])
-        self.io=(start,end)
+        self.delta=np.array((end[0]-start[0], end[1]-start[1], end[2]-start[2]))
+        self.__normalized=self.delta/np.linalg.norm(self.delta)
+        theta=np.arccos(self.__normalized[2])
+        phi=np.arctan2(self.__normalized[1], self.__normalized[0])-np.pi
+        
+        roty=np.array([[np.cos(theta), 0 , -np.sin(theta)], [0,1,0], [np.sin(theta), 0, np.cos(theta)]])
+        rotz=np.array([[np.cos(phi), -np.sin(phi), 0],[np.sin(phi), np.cos(phi), 0], [0,0,1]])
+        self.translator=np.dot(rotz, roty)
+        self.io=np.array((start,end))
 
 class Entity(object):
     def __init__(self):
@@ -72,17 +79,24 @@ class Entity(object):
             path=np.zeros((1000,3))
             for i in range(1000):
                 for j in range(3):
-                    path[i][j]=part.io[0][j]+ds[j]*i
+                    path[i][j]=particle.io[0][j]+ds[j]*i
             self.__path=np.concatenate((self.__path, path),0)
         elif type(particle)==Boson:
             self.__colors=np.concatenate((self.__colors,np.array((cmap[particle.name],)*1000)),0)
-            ds=tuple([particle.delta[i]/1000 for i in range(3)])
             path=np.zeros((1000,3))
-            sf=(particle.delta[0]**2+particle.delta[1]**2+particle.delta[2]**2)**.5/20
+            spiral_scalar=(particle.delta[0]**2+particle.delta[1]**2+particle.delta[2]**2)**.5/20
+            longitudinal_scalar=np.linalg.norm(particle.delta)/1000
+            
+            
             for i in range(1000):
+                path[i]=particle.io[0]+np.dot(particle.translator, np.array((np.cos(i*0.03)*spiral_scalar,np.sin(i*0.03)*spiral_scalar,i*longitudinal_scalar)))
+                
+                
+                """
                 path[i][0]=particle.io[0][0]+ds[0]*i+np.cos(i*0.03)*sf
                 path[i][1]=particle.io[0][1]+ds[1]*i+np.sin(i*0.03)*sf
                 path[i][2]=particle.io[0][2]+ds[2]*i
+                """
             self.__path=np.concatenate((self.__path, path),0)
             
         elif type(particle) in {list, tuple, set}:
@@ -98,13 +112,16 @@ class Entity(object):
                     self.__path=np.concatenate((self.__path, path),0)
                 elif type(part)==Boson:
                     self.__colors=np.concatenate((self.__colors,np.array((cmap[part.name],)*1000)),0)
-                    ds=tuple([part.delta[i]/1000 for i in range(3)])
+                    
                     path=np.zeros((1000,3))
-                    sf=(part.delta[0]**2+part.delta[1]**2+part.delta[2]**2)**.5/20
+                    
+                    
+                    spiral_scalar=(particle.delta[0]**2+particle.delta[1]**2+particle.delta[2]**2)**.5/20
+                    longitudinal_scalar=np.linalg.norm(particle.delta)/1000
+                    
                     for i in range(1000):
-                        path[i][0]=part.io[0][0]+ds[0]*i+np.cos(i*0.03)*sf
-                        path[i][1]=part.io[0][1]+ds[1]*i+np.sin(i*0.03)*sf
-                        path[i][2]=part.io[0][2]+ds[2]*i
+                        path[i]=part.io[0]+np.dot(part.translator, np.array((np.cos(i*0.03)*spiral_scalar,np.sin(i*0.03)*spiral_scalar,i*longitudinal_scalar)))
+
                     self.__path=np.concatenate((self.__path, path),0)
                 else:
                     raise ValueError("No such Boson exists")
@@ -125,4 +142,4 @@ class Entity(object):
     def entity(self, render=True):
         if render:
             self.render()
-        return self.__mode
+        return self.__model
