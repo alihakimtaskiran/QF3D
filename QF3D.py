@@ -1,5 +1,6 @@
 import open3d as o3d
 import numpy as np
+from types import FunctionType
 print("Get ready! Tachyon Era coming soon ")
 last_scientific_update="27th March 2022"
 cmapf={"quark":(.533, .698, 0), "lepton":(0, .58, .941)}
@@ -70,9 +71,12 @@ class Boson(object):
 class Entity(object):
     def __init__(self):
         self.__model=o3d.geometry.PointCloud()
+        self.__metric_model=o3d.geometry.PointCloud()
         self.__path=np.array([(i/250, 0, 0) for i in range(0,1000)]+[(0,i/250, 0) for i in range(0,1000)]+[(0, 0, i/250) for i in range(0,1000)])
         self.__colors=np.array(((0,0,0),)*3000)
+    
     def add(self, particle):
+    
         if type(particle)==Fermion:
             self.__colors=np.concatenate((self.__colors,np.array((cmap[particle.name],)*1000)),0)
             ds=tuple([particle.delta[i]/1000 for i in range(3)])
@@ -81,6 +85,7 @@ class Entity(object):
                 for j in range(3):
                     path[i][j]=particle.io[0][j]+ds[j]*i
             self.__path=np.concatenate((self.__path, path),0)
+        
         elif type(particle)==Boson:
             self.__colors=np.concatenate((self.__colors,np.array((cmap[particle.name],)*1000)),0)
             path=np.zeros((1000,3))
@@ -92,15 +97,13 @@ class Entity(object):
                 path[i]=particle.io[0]+np.dot(particle.translator, np.array((np.cos(i*0.03)*spiral_scalar,np.sin(i*0.03)*spiral_scalar,i*longitudinal_scalar)))
                 
                 
-                """
-                path[i][0]=particle.io[0][0]+ds[0]*i+np.cos(i*0.03)*sf
-                path[i][1]=particle.io[0][1]+ds[1]*i+np.sin(i*0.03)*sf
-                path[i][2]=particle.io[0][2]+ds[2]*i
-                """
             self.__path=np.concatenate((self.__path, path),0)
-            
+
+
         elif type(particle) in {list, tuple, set}:
+    
             for part in particle:
+                
                 if type(part)==Fermion:
                     self.__colors=np.concatenate((self.__colors,np.array((cmap[part.name],)*1000)),0)
                     ds=tuple([part.delta[i]/1000 for i in range(3)])
@@ -110,6 +113,7 @@ class Entity(object):
                         for j in range(3):
                             path[i][j]=part.io[0][j]+ds[j]*i
                     self.__path=np.concatenate((self.__path, path),0)
+                
                 elif type(part)==Boson:
                     self.__colors=np.concatenate((self.__colors,np.array((cmap[part.name],)*1000)),0)
                     
@@ -121,25 +125,89 @@ class Entity(object):
                     
                     for i in range(1000):
                         path[i]=part.io[0]+np.dot(part.translator, np.array((np.cos(i*0.03)*spiral_scalar,np.sin(i*0.03)*spiral_scalar,i*longitudinal_scalar)))
-
+                    
                     self.__path=np.concatenate((self.__path, path),0)
+               
                 else:
                     raise ValueError("No such Boson exists")
+
+
     def render(self):
+        
         self.__model.points=o3d.utility.Vector3dVector(self.__path)
         self.__model.colors=o3d.utility.Vector3dVector(self.__colors)
+        
+        self.__metric_model.points=o3d.utility.Vector3dVector(self.__metric_set)
+        self.__metric_model.colors=o3d.utility.Vector3dVector(self.__colors)
     
-    def view(self,render=True):
-        if render:
+    def metric_tensor(self, g_uv=[[-1, 0, 0], [0, 1, 0], [0, 0, 1]], signature=(-1,1,1), params=None):
+        
+        if not isinstance(g_uv, (np.ndarray,tuple, list)):
+            raise TypeError("Metric Tensor must be a np.array, tuple or list")
+        
+        self.__g_uv=np.array(g_uv)
+        
+        if self.__g_uv.shape!=(3,3):
+            raise ValueError("Metric Tensor is in shape of 3x3")
+        
+        self.__type_map=np.empty((3,3))
+        for u in range(3):
+            for v in range(3):
+                if isinstance(self.__g_uv[u][v],(np.int64,np.int32,np.int16,np.float128,np.float64,np.float32, np.float16,int, float)):
+                    self.__type_map[u][v]=True
+                    
+                else:
+                    self.__type_map[u][v]=False
+                    
+        
+        
+        
+        if not isinstance(signature, (tuple, list)):
+            raise TypeError("Signature must be a np.array, tuple or list")
+        
+        
+        self.signature=tuple(signature)
+        
+        if not(signature==(1,-1,-1) or signature==(-1,1,1)):
+            raise ValueError("Conventional (1 time, 2 spatial) signatures are (-1, 1,1) for (-,+,+) or (1,-1,-1) for (+,-,-) ")
+    
+        
+    
+    
+    def view(self,render=True, mode="topological"):
+        if render and mode=="topological":
             self.render()
-        o3d.visualization.draw_geometries([self.__model])
+            o3d.visualization.draw_geometries([self.__model])
+        
+        elif render and mode=="metric":
+            self.__metric_renderer()
+            o3d.visualization.draw_geometries([self.__metric_model])
+            
+        
     
     def savefile(self,path_to_file, render=True):
+        
         if render:
             self.render()
         o3d.io.write_point_cloud(path_to_file, self.__model)
         
     def entity(self, render=True):
+        
         if render:
             self.render()
         return self.__model
+    
+    def __metric_renderer(self):
+        
+        self.__metric_set=[]
+        for point in self.__path:
+            _T_g=np.empty((3,3))
+            for u in range(3):
+                for v in range(3):
+                    if self.__type_map[u][v]:
+                        _T_g[u][v]=self.__g_uv[u][v]
+                    else:
+                        _T_g[u][v]=self.__g_uv[u][v](point[0],point[1],point[2])
+                    
+            self.__metric_set.append(np.dot(_T_g, point))
+        self.render()
