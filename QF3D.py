@@ -137,8 +137,11 @@ class Entity(object):
         self.__model.points=o3d.utility.Vector3dVector(self.__path)
         self.__model.colors=o3d.utility.Vector3dVector(self.__colors)
         
-        self.__metric_model.points=o3d.utility.Vector3dVector(self.__metric_set)
-        self.__metric_model.colors=o3d.utility.Vector3dVector(self.__colors)
+        try:
+            self.__metric_model.points=o3d.utility.Vector3dVector(self.__metric_set)
+            self.__metric_model.colors=o3d.utility.Vector3dVector(self.__colors)
+        except:
+            pass
     
     def metric_tensor(self, g_uv=[[-1, 0, 0], [0, 1, 0], [0, 0, 1]], signature=(-1,1,1), params=None):
         
