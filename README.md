@@ -35,7 +35,7 @@ entity.view()
 
 ## Classes
 
-### Fermion
+### Fermion(name, start, end)
 
 The Fermion class represents a fermion particle. An instance of this class has the following attributes:
 
@@ -43,7 +43,7 @@ The Fermion class represents a fermion particle. An instance of this class has t
     delta: The difference between the end point and the start point.
     io: A two-element list that contains the start and end points.
 
-### Boson
+### Boson(name, start, end)
 
 The Boson class represents a boson particle. An instance of this class has the following attributes:
 
@@ -52,7 +52,7 @@ The Boson class represents a boson particle. An instance of this class has the f
     translator: A matrix that is used to translate points in the 3D model.
     io: A two-element list that contains the start and end points.
 
-### Entity
+### Entity()
 
 The Entity class is used to represent 3D models in the Open3D library. An instance of this class has the following attributes:
 
